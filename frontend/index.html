@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codentify — Detect Code Plagiarism with Intelligence</title>
+<meta name="description" content="Codentify is an AI-powered code plagiarism detection platform for academic and engineering teams.">
+
+<!-- Inter typeface -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<header class="navbar" id="navbar">
+  <div class="container navbar__inner">
+    <a href="#" class="navbar__logo">Codentify</a>
+    <nav class="navbar__links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#technology">Technology</a>
+      <a href="#demo">Demo</a>
+      <a href="#contributors">Contributors</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="navbar__actions">
+      <a href="#compare" class="btn btn--primary btn--small">Get started</a>
+    </div>
+    <button class="navbar__burger" id="burger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container hero__grid">
+    <div class="hero__content" data-reveal>
+      <span class="eyebrow">AI Powered</span>
+      <h1 class="hero__title">
+        Detect Code<br>
+        Plagiarism<br>
+        with Intelligence.
+      </h1>
+      <p class="hero__subtitle">
+        Codentify compares source code at the level of logic and structure,
+        not just text — surfacing similarity that keyword search cannot see.
+      </p>
+      <div class="hero__actions">
+        <a href="#compare" class="btn btn--primary">Try it now</a>
+        <a href="#how-it-works" class="btn btn--ghost">See how it works</a>
+      </div>
+    </div>
+
+    <div class="hero__visual" id="compare" data-reveal data-parallax>
+      <div class="mockup glass">
+        <div class="mockup__bar">
+          <div class="mockup__dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="mockup__title">Codentify — Compare</span>
+        </div>
+
+        <div class="mockup__body">
+          <div class="mockup__row mockup__uploads">
+            <label class="upload-chip" id="uploadChipA" for="fileInputA">
+              <span class="upload-chip__icon">＋</span>
+              <span class="upload-chip__text">Upload File A</span>
+              <input type="file" id="fileInputA" class="visually-hidden-input">
+            </label>
+            <label class="upload-chip" id="uploadChipB" for="fileInputB">
+              <span class="upload-chip__icon">＋</span>
+              <span class="upload-chip__text">Upload File B</span>
+              <input type="file" id="fileInputB" class="visually-hidden-input">
+            </label>
+          </div>
+
+          <div class="mockup__files" id="filePillContainer"></div>
+
+          <button class="btn btn--primary btn--full" id="compareBtn" disabled>Compare</button>
+
+          <div class="compare-loading" id="compareLoading" style="display:none;">
+            <span class="compare-loading__spinner"></span>
+            <span>Sending files to the model…</span>
+          </div>
+
+          <div class="compare-error" id="compareError" style="display:none;"></div>
+
+          <div class="similarity-result" id="similarityResult" style="display:none;">
+            <div class="similarity-result__top">
+              <div>
+                <span class="similarity-result__label">Similarity</span>
+                <span class="similarity-result__verdict" id="similarityVerdict"></span>
+              </div>
+              <span class="similarity-result__value" id="similarityValue">—</span>
+            </div>
+
+            <div class="similarity-result__charts">
+              <div class="chart-box">
+                <span class="chart-box__label">Overall match</span>
+                <canvas id="similarityDoughnut" height="160"></canvas>
+              </div>
+              <div class="chart-box">
+                <span class="chart-box__label">Score breakdown</span>
+                <canvas id="breakdownBar" height="160"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <p class="upload-hint" id="uploadHint">Select two code files to compare — they'll be sent to the plagiarism-detection model for analysis.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section__header" data-reveal>
+      <span class="eyebrow">Features</span>
+      <h2 class="section__title">Built to see past the surface.</h2>
+      <p class="section__subtitle">Every feature exists to catch what simple diffing tools miss.</p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card" data-reveal>
+        <div class="feature-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M8 3L4 7l4 4M16 3l4 4-4 4M14 3L10 21" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Structural analysis</h3>
+        <p>Compares abstract syntax trees rather than raw text, so renamed variables and reordered blocks don't hide a match.</p>
+      </div>
+
+      <div class="feature-card" data-reveal>
+        <div class="feature-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Instant results</h3>
+        <p>Submissions are analyzed in seconds, even across large classes or engineering teams with thousands of files.</p>
+      </div>
+
+      <div class="feature-card" data-reveal>
+        <div class="feature-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 12h6M9 16h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Clear reports</h3>
+        <p>Every result includes a similarity score and a side-by-side view of the exact lines that matched.</p>
+      </div>
+
+      <div class="feature-card" data-reveal>
+        <div class="feature-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M3 9h18" stroke="currentColor" stroke-width="1.4"/></svg>
+        </div>
+        <h3>20+ languages</h3>
+        <p>From Java and Python to Rust and Go — Codentify understands the grammar of every major language.</p>
+      </div>
+
+      <div class="feature-card" data-reveal>
+        <div class="feature-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Private by design</h3>
+        <p>Code is processed in isolation and never used to train models or shared beyond your workspace.</p>
+      </div>
+
+      <div class="feature-card" data-reveal>
+        <div class="feature-card__icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v16h16M8 15l3-4 3 3 4-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Batch comparison</h3>
+        <p>Compare an entire cohort or repository against itself, or against a public database of prior work.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="section section--alt" id="how-it-works">
+  <div class="container">
+    <div class="section__header" data-reveal>
+      <span class="eyebrow">Process</span>
+      <h2 class="section__title">From upload to report, in four steps.</h2>
+    </div>
+
+    <div class="timeline" data-reveal>
+      <div class="timeline__step">
+        <span class="timeline__index">01</span>
+        <h3>Upload</h3>
+        <p>Add the files or repositories you want to compare.</p>
+      </div>
+      <div class="timeline__connector"></div>
+      <div class="timeline__step">
+        <span class="timeline__index">02</span>
+        <h3>Analyze</h3>
+        <p>Codentify parses each submission into its structural form.</p>
+      </div>
+      <div class="timeline__connector"></div>
+      <div class="timeline__step">
+        <span class="timeline__index">03</span>
+        <h3>Compare</h3>
+        <p>Structures are matched against one another and a reference set.</p>
+      </div>
+      <div class="timeline__connector"></div>
+      <div class="timeline__step">
+        <span class="timeline__index">04</span>
+        <h3>Generate report</h3>
+        <p>A clear, shareable similarity report is ready to review.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TECHNOLOGY ============ -->
+<section class="section" id="technology">
+  <div class="container tech__grid">
+    <div class="tech__content" data-reveal>
+      <span class="eyebrow">Technology</span>
+      <h2 class="section__title">Understanding, not string-matching.</h2>
+      <p class="section__subtitle">
+        Codentify parses source code into an abstract syntax tree, then
+        compares the resulting structure using graph-based similarity models.
+        The result is a system that recognizes logic, not just characters.
+      </p>
+      <ul class="tech__list">
+        <li>Tokenization and AST parsing per language</li>
+        <li>Graph-based structural comparison</li>
+        <li>Confidence-scored similarity output</li>
+      </ul>
+    </div>
+
+    <div class="tech__visual" data-reveal>
+      <div class="stat-card glass">
+        <span class="stat-card__value">99.2%</span>
+        <span class="stat-card__label">Detection accuracy across benchmark datasets</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEMO ============ -->
+<section class="section section--alt" id="demo">
+  <div class="container">
+    <div class="section__header" data-reveal>
+      <span class="eyebrow">Demo</span>
+      <h2 class="section__title">See a comparison in practice.</h2>
+    </div>
+
+    <div class="demo-panel glass" data-reveal>
+      <div class="demo-panel__side">
+        <div class="demo-panel__label">Original code</div>
+        <pre class="code-block"><code><span class="tok-kw">public class</span> <span class="tok-fn">Sorter</span> {
+    <span class="tok-kw">public static void</span> <span class="tok-fn">sort</span>(<span class="tok-kw">int</span>[] arr) {
+        <span class="tok-kw">for</span> (<span class="tok-kw">int</span> i = <span class="tok-num">0</span>; i &lt; arr.length; i++) {
+<mark>            <span class="tok-kw">for</span> (<span class="tok-kw">int</span> j = <span class="tok-num">0</span>; j &lt; arr.length - i - <span class="tok-num">1</span>; j++) {</mark>
+<mark>                <span class="tok-kw">if</span> (arr[j] &gt; arr[j + <span class="tok-num">1</span>]) {</mark>
+<mark>                    <span class="tok-kw">int</span> temp = arr[j];</mark>
+<mark>                    arr[j] = arr[j + <span class="tok-num">1</span>];</mark>
+<mark>                    arr[j + <span class="tok-num">1</span>] = temp;</mark>
+                }
+            }
+        }
+    }
+}</code></pre>
+      </div>
+
+      <div class="demo-panel__divider">
+        <div class="demo-panel__score">
+          <span>89%</span>
+          <small>Similar</small>
+        </div>
+      </div>
+
+      <div class="demo-panel__side">
+        <div class="demo-panel__label">Compared code</div>
+        <pre class="code-block"><code><span class="tok-kw">def</span> <span class="tok-fn">bubble_sort</span>(arr):
+<mark>    <span class="tok-kw">for</span> i <span class="tok-kw">in</span> range(len(arr)):</mark>
+<mark>        <span class="tok-kw">for</span> j <span class="tok-kw">in</span> range(len(arr) - i - <span class="tok-num">1</span>):</mark>
+<mark>            <span class="tok-kw">if</span> arr[j] &gt; arr[j + <span class="tok-num">1</span>]:</mark>
+<mark>                arr[j], arr[j + <span class="tok-num">1</span>] = \</mark>
+<mark>                    arr[j + <span class="tok-num">1</span>], arr[j]</mark>
+    <span class="tok-kw">return</span> arr</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section class="section" id="testimonials">
+  <div class="container">
+    <div class="section__header" data-reveal>
+      <span class="eyebrow">Testimonials</span>
+      <h2 class="section__title">Trusted by people who read code for a living.</h2>
+    </div>
+
+    <div class="testimonial-grid">
+      <blockquote class="testimonial-card" data-reveal>
+        <p>“Codentify catches similarity our previous tool never flagged. It reads structure, not just syntax.”</p>
+        <footer>
+          <span class="testimonial-card__name">Elena Marsh</span>
+          <span class="testimonial-card__role">Lecturer, Computer Science</span>
+        </footer>
+      </blockquote>
+
+      <blockquote class="testimonial-card" data-reveal>
+        <p>“Setup took minutes. The reports are the clearest I've seen from any plagiarism tool.”</p>
+        <footer>
+          <span class="testimonial-card__name">Daniel Osei</span>
+          <span class="testimonial-card__role">Engineering Manager</span>
+        </footer>
+      </blockquote>
+
+      <blockquote class="testimonial-card" data-reveal>
+        <p>“It feels less like a scanner and more like a second reviewer who never gets tired.”</p>
+        <footer>
+          <span class="testimonial-card__name">Priya Nadar</span>
+          <span class="testimonial-card__role">Course Instructor</span>
+        </footer>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTRIBUTORS ============ -->
+<section class="section" id="contributors">
+  <div class="container">
+    <div class="section__header" data-reveal>
+      <span class="eyebrow">Our Contributors</span>
+      <h2 class="section__title">The people building Codentify.</h2>
+      <p class="section__subtitle">A small team focused on making code similarity detection genuinely understand structure.</p>
+    </div>
+
+    <!-- shared silhouette shapes, reused via <use> -->
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <g id="figure-short">
+          <path d="M14 54c0-12.2 8.1-20 18-20s18 7.8 18 20" fill="#fff"/>
+          <circle cx="32" cy="23" r="11" fill="#fff"/>
+        </g>
+        <g id="figure-long">
+          <path d="M32 9c8.3 0 15 6.8 15 16v8.5c0 2-1.1 3.3-2.1 3.3-0.9-4.6-1.9-7.6-1.9-7.6-1 6.2-4.6 10.3-11 10.3s-10-4.1-11-10.3c0 0-1 3-1.9 7.6-1 0-2.1-1.3-2.1-3.3V25c0-9.2 6.7-16 15-16z" fill="#fff"/>
+          <circle cx="32" cy="24" r="10.5" fill="#fff"/>
+          <path d="M14 54c0-12.2 8.1-20 18-20s18 7.8 18 20" fill="#fff"/>
+        </g>
+      </defs>
+    </svg>
+
+    <div class="contributors-grid">
+      <div class="contributor-card" data-reveal>
+        <div class="avatar-wrap">
+          <span class="avatar__ring"></span>
+          <div class="avatar avatar--1">
+            <svg viewBox="0 0 64 64" class="avatar__figure"><use href="#figure-long"/></svg>
+          </div>
+        </div>
+        <h3 class="contributor-card__name">Shagun Attri</h3>
+        <span class="contributor-card__role">Co-Founder &amp; AI Engineer</span>
+        <p class="contributor-card__bio">Designs the structural-similarity models at the core of Codentify's detection engine.</p>
+      </div>
+
+      <div class="contributor-card" data-reveal>
+        <div class="avatar-wrap">
+          <span class="avatar__ring"></span>
+          <div class="avatar avatar--2">
+            <svg viewBox="0 0 64 64" class="avatar__figure"><use href="#figure-short"/></svg>
+          </div>
+        </div>
+        <h3 class="contributor-card__name">Priyanshu Rana</h3>
+        <span class="contributor-card__role">Backend Engineer</span>
+        <p class="contributor-card__bio">Builds the parsing pipeline that turns raw source files into comparable structures.</p>
+      </div>
+
+      <div class="contributor-card" data-reveal>
+        <div class="avatar-wrap">
+          <span class="avatar__ring"></span>
+          <div class="avatar avatar--3">
+            <svg viewBox="0 0 64 64" class="avatar__figure"><use href="#figure-long"/></svg>
+          </div>
+        </div>
+        <h3 class="contributor-card__name">Smriti</h3>
+        <span class="contributor-card__role">Frontend Engineer &amp; Design</span>
+        <p class="contributor-card__bio">Shapes the interface, from the reveal animations to the comparison reports.</p>
+      </div>
+
+      <div class="contributor-card" data-reveal>
+        <div class="avatar-wrap">
+          <span class="avatar__ring"></span>
+          <div class="avatar avatar--4">
+            <svg viewBox="0 0 64 64" class="avatar__figure"><use href="#figure-short"/></svg>
+          </div>
+        </div>
+        <h3 class="contributor-card__name">Rohan Bisht</h3>
+        <span class="contributor-card__role">Product &amp; Data</span>
+        <p class="contributor-card__bio">Runs the benchmark datasets and keeps accuracy honest across languages.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section section--alt" id="faq">
+  <div class="container container--narrow">
+    <div class="section__header" data-reveal>
+      <span class="eyebrow">FAQ</span>
+      <h2 class="section__title">Questions, answered.</h2>
+    </div>
+
+    <div class="accordion" data-reveal>
+      <div class="accordion__item">
+        <button class="accordion__trigger">
+          Which languages does Codentify support?
+          <span class="accordion__icon"></span>
+        </button>
+        <div class="accordion__panel">
+          <p>Codentify currently supports over 20 languages, including Java, Python, C++, JavaScript, Go and Rust, with more added regularly.</p>
+        </div>
+      </div>
+
+      <div class="accordion__item">
+        <button class="accordion__trigger">
+          Is my code stored or used for training?
+          <span class="accordion__icon"></span>
+        </button>
+        <div class="accordion__panel">
+          <p>No. Submissions are processed in isolation for the duration of the comparison and are never used to train any model.</p>
+        </div>
+      </div>
+
+      <div class="accordion__item">
+        <button class="accordion__trigger">
+          How is similarity calculated?
+          <span class="accordion__icon"></span>
+        </button>
+        <div class="accordion__panel">
+          <p>Each submission is parsed into an abstract syntax tree. Structures are then compared using a graph-based similarity model, producing a confidence-scored percentage.</p>
+        </div>
+      </div>
+
+      <div class="accordion__item">
+        <button class="accordion__trigger">
+          Can I compare against a public reference set?
+          <span class="accordion__icon"></span>
+        </button>
+        <div class="accordion__panel">
+          <p>Yes. In addition to comparing files against each other, you can compare against a continuously updated set of public repositories.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="container footer__grid">
+    <div class="footer__brand">
+      <span class="footer__logo">Codentify</span>
+      <p>Detect code plagiarism with intelligence.</p>
+    </div>
+
+    <div class="footer__col">
+      <span class="footer__heading">Product</span>
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#technology">Technology</a>
+      <a href="#demo">Demo</a>
+    </div>
+
+    <div class="footer__col">
+      <span class="footer__heading">Company</span>
+      <a href="#contributors">Contributors</a>
+      <a href="about.html">About</a>
+      <a href="careers.html">Careers</a>
+      <a href="contact.html">Contact</a>
+    </div>
+
+    <div class="footer__col">
+      <span class="footer__heading">Legal</span>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms & Conditions</a>
+    </div>
+  </div>
+
+  <div class="container footer__bottom">
+    <span>© 2026 Codentify. All rights reserved.</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
