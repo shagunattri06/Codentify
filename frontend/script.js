@@ -125,84 +125,16 @@
   });
 
   /* =========================================================
-     FILE UPLOAD + AI/ML MODEL COMPARISON
-     This frontend does NOT compute plagiarism/similarity itself.
-     It only reads the two files, sends them to your trained
-     model's API, and renders whatever result comes back.
-
-     -----------------------------------------------------------
-     WIRE THIS UP TO YOUR MODEL:
-     1. Set API_ENDPOINT below to your backend route
-        (e.g. a Flask/FastAPI endpoint that loads your trained
-        model and returns a JSON result).
-     2. Your endpoint should accept a POST with JSON body:
-          {
-            "file_a": { "name": "A.py", "content": "...source..." },
-            "file_b": { "name": "B.py", "content": "...source..." }
-          }
-     3. Your endpoint should respond with JSON shaped like:
-          {
-            "similarity": 87.4,          // 0-100 overall score from your model
-            "verdict": "High similarity", // short label, your choice
-            "breakdown": {                 // optional, powers the bar chart
-              "Structural": 82,
-              "Textual": 91,
-              "Token Overlap": 76
-            }
-          }
-        "breakdown" is optional — if your model only returns a
-        single score, omit it and the bar chart is skipped.
-     4. Once your endpoint is live, set USE_MOCK_PREVIEW to false.
+     REAL FILE UPLOAD + AI/ML PLAGIARISM COMPARISON
+     Files are sent to the Codentify backend, which parses them
+     into Abstract Syntax Trees and runs them through a trained
+     Random Forest model (see /backend and /ml_engine in the repo).
+     Currently only .java files are supported by the trained model.
      ========================================================= */
 
-  const API_ENDPOINT = 'http://localhost:5000/api/compare';
-
-  // DEV PREVIEW ONLY. While true, no network call is made and no
-  // file content is analyzed — this just fills the UI with fixed
-  // placeholder numbers so you can see the charts render. It does
-  // NOT compute any real similarity. Set to false once your model
-  // API (above) is ready, so results come from the trained model.
-  const USE_MOCK_PREVIEW = false;
-
-  function getMockPreviewResult() {
-    return {
-      similarity: 74,
-      verdict: 'Moderate similarity',
-      breakdown: {
-        Structural: 68,
-        Textual: 81,
-        'Token Overlap': 59,
-      },
-    };
-  }
-
-  async function requestComparisonFromModel(fileA, fileB) {
-    if (USE_MOCK_PREVIEW) {
-      // Simulate network latency so the loading state is visible.
-      await new Promise((resolve) => setTimeout(resolve, 700));
-      return getMockPreviewResult();
-    }
-
-    const [contentA, contentB] = await Promise.all([
-      readFileAsText(fileA),
-      readFileAsText(fileB),
-    ]);
-
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        file_a: { name: fileA.name, content: contentA },
-        file_b: { name: fileB.name, content: contentB },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Model API responded with status ${response.status}`);
-    }
-
-    return response.json();
-  }
+  // Change this if the backend runs somewhere other than localhost during development,
+  // or point it at your deployed API URL in production.
+  const BACKEND_URL = 'http://localhost:8000';
 
   const EXT_META = {
     java: { color: '#E76F00', label: 'Java' },
@@ -227,13 +159,24 @@
     return EXT_META[ext] || { color: '#6B7280', label: ext ? ext.toUpperCase() : 'File' };
   }
 
-  function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
+  async function compareFilesOnBackend(fileA, fileB) {
+    const formData = new FormData();
+    formData.append('file_a', fileA);
+    formData.append('file_b', fileB);
+
+    const response = await fetch(`${BACKEND_URL}/compare`, {
+      method: 'POST',
+      body: formData,
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // FastAPI puts validation/error messages in `detail`
+      throw new Error(data.detail || 'Something went wrong comparing these files.');
+    }
+
+    return data; // { similarity, prediction, confidence }
   }
 
   function initCompareWidget(scope) {
@@ -243,25 +186,13 @@
     const inputB = scope.querySelector('#fileInputB');
     const pillContainer = scope.querySelector('#filePillContainer');
     const compareBtn = scope.querySelector('#compareBtn');
-    const loadingBox = scope.querySelector('#compareLoading');
-    const errorBox = scope.querySelector('#compareError');
     const resultBox = scope.querySelector('#similarityResult');
     const resultValue = scope.querySelector('#similarityValue');
-    const resultVerdict = scope.querySelector('#similarityVerdict');
-    const doughnutCanvas = scope.querySelector('#similarityDoughnut');
-    const barCanvas = scope.querySelector('#breakdownBar');
     const hint = scope.querySelector('#uploadHint');
 
     if (!chipA || !chipB || !inputA || !inputB || !compareBtn) return;
 
     const state = { fileA: null, fileB: null };
-    const charts = { doughnut: null, bar: null };
-
-    function resetResultUI() {
-      if (errorBox) errorBox.style.display = 'none';
-      if (loadingBox) loadingBox.style.display = 'none';
-      if (resultBox) resultBox.style.display = 'none';
-    }
 
     function renderPills() {
       pillContainer.innerHTML = '';
@@ -301,10 +232,10 @@
       compareBtn.disabled = !ready;
       if (hint) {
         hint.textContent = ready
-          ? 'Ready to compare — this will be sent to the plagiarism-detection model.'
-          : "Select two code files to compare — they'll be sent to the plagiarism-detection model for analysis.";
+          ? 'Ready to compare — analyzed by the AI/ML engine (.java files only, for now).'
+          : 'Select two Java files to compare.';
       }
-      resetResultUI();
+      resultBox.style.display = 'none';
     }
 
     inputA.addEventListener('change', () => {
@@ -321,69 +252,6 @@
       }
     });
 
-    function renderCharts(result) {
-      if (typeof Chart === 'undefined') return; // Chart.js failed to load
-
-      const percent = Math.max(0, Math.min(100, Math.round(result.similarity)));
-
-      if (doughnutCanvas) {
-        if (charts.doughnut) charts.doughnut.destroy();
-        charts.doughnut = new Chart(doughnutCanvas, {
-          type: 'doughnut',
-          data: {
-            labels: ['Similar', 'Different'],
-            datasets: [{
-              data: [percent, 100 - percent],
-              backgroundColor: ['#2563EB', '#F1F1EF'],
-              borderWidth: 0,
-            }],
-          },
-          options: {
-            responsive: true,
-            cutout: '72%',
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-          },
-        });
-      }
-
-      const breakdown = result.breakdown && typeof result.breakdown === 'object'
-        ? result.breakdown
-        : null;
-
-      if (barCanvas) {
-        if (charts.bar) {
-          charts.bar.destroy();
-          charts.bar = null;
-        }
-        if (breakdown) {
-          const labels = Object.keys(breakdown);
-          const values = labels.map((key) => breakdown[key]);
-          charts.bar = new Chart(barCanvas, {
-            type: 'bar',
-            data: {
-              labels,
-              datasets: [{
-                data: values,
-                backgroundColor: '#2563EB',
-                borderRadius: 6,
-                maxBarThickness: 28,
-              }],
-            },
-            options: {
-              responsive: true,
-              indexAxis: 'y',
-              scales: {
-                x: { min: 0, max: 100, grid: { display: false } },
-                y: { grid: { display: false } },
-              },
-              plugins: { legend: { display: false } },
-            },
-          });
-        }
-        barCanvas.closest('.chart-box').style.display = breakdown ? '' : 'none';
-      }
-    }
-
     compareBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       if (!state.fileA || !state.fileB) return;
@@ -391,28 +259,32 @@
       const originalLabel = compareBtn.textContent;
       compareBtn.disabled = true;
       compareBtn.textContent = 'Comparing…';
-      resetResultUI();
-      if (loadingBox) loadingBox.style.display = 'flex';
 
       try {
-        const result = await requestComparisonFromModel(state.fileA, state.fileB);
+        const result = await compareFilesOnBackend(state.fileA, state.fileB);
+        const percent = Math.round(result.similarity * 100);
+        const isPlagiarized = result.prediction === 'plagiarized';
+        const confidencePercent = Math.round(result.confidence * 100);
 
-        if (loadingBox) loadingBox.style.display = 'none';
+        resultValue.style.transition = 'opacity 0.3s var(--ease-premium)';
+        resultValue.style.opacity = '0';
         resultBox.style.display = 'flex';
-        resultValue.textContent = `${Math.round(result.similarity)}%`;
-        if (resultVerdict) resultVerdict.textContent = result.verdict || '';
-        renderCharts(result);
+
+        setTimeout(() => {
+          resultValue.textContent = `${percent}%`;
+          resultValue.style.color = isPlagiarized ? '#DC2626' : 'var(--accent-blue)';
+          resultValue.style.opacity = '1';
+        }, 200);
 
         if (hint) {
-          hint.textContent = USE_MOCK_PREVIEW
-            ? 'Showing placeholder preview data — connect API_ENDPOINT in script.js to your trained model.'
-            : 'Result returned by the plagiarism-detection model.';
+          hint.textContent = isPlagiarized
+            ? `Flagged as plagiarized (${confidencePercent}% model confidence).`
+            : `Not flagged as plagiarized (${confidencePercent}% model confidence).`;
         }
       } catch (err) {
-        if (loadingBox) loadingBox.style.display = 'none';
-        if (errorBox) {
-          errorBox.style.display = 'block';
-          errorBox.textContent = "Couldn't reach the comparison model. Make sure your backend API is running and API_ENDPOINT in script.js points to it.";
+        resultBox.style.display = 'none';
+        if (hint) {
+          hint.textContent = err.message || 'Could not reach the comparison service. Is the backend running?';
         }
       } finally {
         compareBtn.disabled = false;
