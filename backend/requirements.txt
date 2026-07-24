@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+python-multipart
+javalang
+scikit-learn==1.8.0
+joblib
+pandas
+numpy
