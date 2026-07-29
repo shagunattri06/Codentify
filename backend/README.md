@@ -53,6 +53,4 @@ const BACKEND_URL = 'http://localhost:8000';
 
 If you deploy the backend somewhere later (Render, Railway, etc.), update `BACKEND_URL` in `script.js` to point at the deployed URL instead of `localhost`.
 
-## Known limitation (be upfront about this with faculty/users)
-
-The trained model currently only supports **Java** source files, even though the site's marketing copy mentions "20+ languages." Extending to other languages would need separate AST parsers per language — worth flagging as a "Future Work" item in the report rather than silently over-promising.
+In the current version of our project, the plagiarism detection model works only with Java source files. While our platform is intended to support 20+ programming languages in the future, each language requires its own AST parser and processing pipeline. Since developing and training models for multiple languages was beyond the scope of this project, we implemented support for Java first. Expanding language support is one of the key future improvements planned for the project.
