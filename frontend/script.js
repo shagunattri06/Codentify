@@ -129,7 +129,7 @@
      Files are sent to the Codentify backend, which parses them
      into Abstract Syntax Trees and runs them through a trained
      Random Forest model (see /backend and /ml_engine in the repo).
-     Currently only .java files are supported by the trained model.
+     Currently only .java (Java) files are supported by the trained model.
      ========================================================= */
 
   // Change this if the backend runs somewhere other than localhost during development,
@@ -179,6 +179,31 @@
     return data; // { similarity, prediction, confidence }
   }
 
+  function cssVar(name, fallback) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  }
+
+  /* FIX for the "giant stretching charts" + lag problem:
+     Chart.js with `maintainAspectRatio: false` needs a parent element with a
+     FIXED height. Without one, the chart keeps growing its own box and
+     resizing in a loop. This wraps the canvas in a fixed-height container
+     automatically, so no HTML/CSS edits are needed. */
+  function ensureChartWrapper(canvas, height = 180) {
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (parent && parent.classList.contains('chart-box__canvas')) return; // already wrapped
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-box__canvas';
+    wrapper.style.position = 'relative';
+    wrapper.style.height = `${height}px`;
+    wrapper.style.width = '100%';
+
+    parent.insertBefore(wrapper, canvas);
+    wrapper.appendChild(canvas);
+  }
+
   function initCompareWidget(scope) {
     const chipA = scope.querySelector('#uploadChipA');
     const chipB = scope.querySelector('#uploadChipB');
@@ -188,11 +213,31 @@
     const compareBtn = scope.querySelector('#compareBtn');
     const resultBox = scope.querySelector('#similarityResult');
     const resultValue = scope.querySelector('#similarityValue');
+    const verdictEl = scope.querySelector('#similarityVerdict');
+    const loadingBox = scope.querySelector('#compareLoading');
+    const errorBox = scope.querySelector('#compareError');
     const hint = scope.querySelector('#uploadHint');
+    const doughnutCanvas = scope.querySelector('#similarityDoughnut');
+    const barCanvas = scope.querySelector('#breakdownBar');
 
     if (!chipA || !chipB || !inputA || !inputB || !compareBtn) return;
 
+    // Give both charts a fixed-height parent so they can't stretch the page
+    ensureChartWrapper(doughnutCanvas);
+    ensureChartWrapper(barCanvas);
+
     const state = { fileA: null, fileB: null };
+    let doughnutChart = null;
+    let barChart = null;
+
+    function resetResultUI() {
+      resultBox.style.display = 'none';
+      if (loadingBox) loadingBox.style.display = 'none';
+      if (errorBox) {
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+      }
+    }
 
     function renderPills() {
       pillContainer.innerHTML = '';
@@ -235,7 +280,7 @@
           ? 'Ready to compare — analyzed by the AI/ML engine (.java files only, for now).'
           : 'Select two Java files to compare.';
       }
-      resultBox.style.display = 'none';
+      resetResultUI();
     }
 
     inputA.addEventListener('change', () => {
@@ -256,39 +301,103 @@
       e.preventDefault();
       if (!state.fileA || !state.fileB) return;
 
-      const originalLabel = compareBtn.textContent;
+      resetResultUI();
       compareBtn.disabled = true;
-      compareBtn.textContent = 'Comparing…';
+      if (loadingBox) loadingBox.style.display = 'flex';
+      if (hint) hint.textContent = 'Sending files to the model…';
 
       try {
         const result = await compareFilesOnBackend(state.fileA, state.fileB);
-        const percent = Math.round(result.similarity * 100);
-        const isPlagiarized = result.prediction === 'plagiarized';
+        const similarityPercent = Math.round(result.similarity * 100);
         const confidencePercent = Math.round(result.confidence * 100);
+        const isPlagiarized = result.prediction === 'plagiarized';
+
+        const primaryColor = cssVar('--accent-blue', '#2563EB');
+        const dangerColor = '#DC2626';
+        const neutralColor = cssVar('--border-color', '#E5E7EB');
+        const verdictColor = isPlagiarized ? dangerColor : primaryColor;
+
+        if (loadingBox) loadingBox.style.display = 'none';
+        resultBox.style.display = 'flex';
 
         resultValue.style.transition = 'opacity 0.3s var(--ease-premium)';
         resultValue.style.opacity = '0';
-        resultBox.style.display = 'flex';
-
         setTimeout(() => {
-          resultValue.textContent = `${percent}%`;
-          resultValue.style.color = isPlagiarized ? '#DC2626' : 'var(--accent-blue)';
+          resultValue.textContent = `${similarityPercent}%`;
+          resultValue.style.color = verdictColor;
           resultValue.style.opacity = '1';
-        }, 200);
+        }, 150);
+
+        if (verdictEl) {
+          verdictEl.textContent = isPlagiarized
+            ? `Flagged as plagiarized · ${confidencePercent}% confidence`
+            : `Not flagged · ${confidencePercent}% confidence`;
+          verdictEl.style.color = verdictColor;
+        }
 
         if (hint) {
-          hint.textContent = isPlagiarized
-            ? `Flagged as plagiarized (${confidencePercent}% model confidence).`
-            : `Not flagged as plagiarized (${confidencePercent}% model confidence).`;
+          hint.textContent = 'Structural (AST-based) comparison — currently supports .java (Java) files only.';
+        }
+
+        // Chart.js is loaded globally via CDN in index.html
+        if (window.Chart && doughnutCanvas) {
+          if (doughnutChart) doughnutChart.destroy();
+          doughnutChart = new Chart(doughnutCanvas, {
+            type: 'doughnut',
+            data: {
+              labels: ['Similarity', 'Remaining'],
+              datasets: [{
+                data: [similarityPercent, 100 - similarityPercent],
+                backgroundColor: [verdictColor, neutralColor],
+                borderWidth: 0,
+              }],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 400 },
+              cutout: '72%',
+              plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            },
+          });
+        }
+
+        if (window.Chart && barCanvas) {
+          if (barChart) barChart.destroy();
+          barChart = new Chart(barCanvas, {
+            type: 'bar',
+            data: {
+              labels: ['Similarity', 'Confidence'],
+              datasets: [{
+                data: [similarityPercent, confidencePercent],
+                backgroundColor: [verdictColor, primaryColor],
+                borderRadius: 6,
+                maxBarThickness: 36,
+              }],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 400 },
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } },
+              },
+            },
+          });
         }
       } catch (err) {
+        if (loadingBox) loadingBox.style.display = 'none';
         resultBox.style.display = 'none';
+        if (errorBox) {
+          errorBox.style.display = 'block';
+          errorBox.textContent = err.message || 'Could not reach the comparison service. Is the backend running?';
+        }
         if (hint) {
-          hint.textContent = err.message || 'Could not reach the comparison service. Is the backend running?';
+          hint.textContent = 'Select two Java files to compare.';
         }
       } finally {
         compareBtn.disabled = false;
-        compareBtn.textContent = originalLabel;
       }
     });
 
